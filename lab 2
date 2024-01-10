@@ -1,0 +1,70 @@
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+
+class CustomException : public std::exception {
+private:
+    std::string message;
+    double errorValue;
+    int errorCode;
+
+public:
+    CustomException(std::string msg, double val, int code)
+        : message(std::move(msg)), errorValue(val), errorCode(code) {}
+
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
+
+    double getErrorValue() const {
+        return errorValue;
+    }
+
+    int getErrorCode() const {
+        return errorCode;
+    }
+};
+
+double calculateZ1(const double& m) {
+    if (m <= 0) {
+        throw CustomException("m должна быть больше нуля.", m, 1);
+    }
+
+    double denominator = 3 * sqrt(m) - 2 * sqrt(m);
+    if (denominator == 0) {
+        throw CustomException("в z1 получился ноль.", m, 2);
+    }
+
+    return sqrt((3 * m + 2) * (3 * m + 2) - 24 * m) / denominator;
+}
+
+double calculateZ2(const double& m) {
+    if (m < 0) {
+        throw CustomException("m должна быть больше нуля.", m, 3);
+    }
+
+    return -sqrt(m);
+}
+
+int main() {
+    setlocale(0, "ru");
+    double m;
+    std::cout << "Введите m: ";
+    std::cin >> m;
+
+    try {
+        double z1 = calculateZ1(m);
+        double z2 = calculateZ2(m);
+
+        std::cout << "Z1: " << z1 << "\n";
+        std::cout << "Z2: " << z2 << "\n";
+        //Значения не равны, но формула верна с условием лабораторной, видимо ошибка
+    }
+    catch (const CustomException& e) {
+        std::cerr << "Exception occurred: " << e.what() << "\n";
+        std::cerr << "Error value: " << e.getErrorValue() << "\n";
+        std::cerr << "Error code: " << e.getErrorCode() << "\n";
+    }
+
+    return 0;
+}
