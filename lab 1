@@ -1,0 +1,213 @@
+#include <iostream>
+#include <initializer_list>
+#include <string>
+
+namespace containers {
+    template <typename T>
+    class DList {
+    private:
+        struct Node {
+            T value;
+            Node* prev;
+            Node* next;
+
+            Node(T val, Node* p = nullptr, Node* n = nullptr) : value(val), prev(p), next(n) {}
+        };
+
+        Node* head;
+        Node* tail;
+        size_t size;
+
+        void copyFrom(const DList& other) {
+            Node* current = other.head;
+            while (current) {
+                push_back(current->value);
+                current = current->next;
+            }
+        }
+
+        void moveFrom(DList&& other) {
+            head = other.head;
+            tail = other.tail;
+            size = other.size;
+            other.head = other.tail = nullptr;
+            other.size = 0;
+        }
+
+        void clear() {
+            while (head != nullptr) {
+                Node* temp = head;
+                head = head->next;
+                delete temp;
+            }
+            tail = nullptr;
+            size = 0;
+        }
+
+        Node* getNodeAt(size_t index) {
+            Node* current = head;
+            while (index-- > 0 && current) {
+                current = current->next;
+            }
+            return current;
+        }
+
+    public:
+        DList() : head(nullptr), tail(nullptr), size(0) {}
+
+        DList(const std::initializer_list<T>& ilist) : DList() {
+            for (const T& value : ilist) {
+                push_back(value);
+            }
+        }
+
+        DList(const DList& other) : DList() {
+            copyFrom(other);
+        }
+
+        DList(DList&& other) : DList() {
+            moveFrom(std::move(other));
+        }
+
+        DList& operator=(const DList& other) {
+            if (this != &other) {
+                clear();
+                copyFrom(other);
+            }
+            return *this;
+        }
+
+        DList& operator=(DList&& other) {
+            if (this != &other) {
+                clear();
+                moveFrom(std::move(other));
+            }
+            return *this;
+        }
+
+        ~DList() {
+            clear();
+        }
+
+        void push_back(const T& value) {
+            Node* newNode = new Node(value);
+            if (!head) {
+                head = tail = newNode;
+            }
+            else {
+                newNode->prev = tail;
+                tail->next = newNode;
+                tail = newNode;
+            }
+            size++;
+        }
+
+        void insert(size_t index, const T& value) {
+            if (index == 0 || !head) {
+                Node* newNode = new Node(value, nullptr, head);
+                if (head) {
+                    head->prev = newNode;
+                }
+                head = newNode;
+                if (!tail) {
+                    tail = head;
+                }
+            }
+            else if (index >= size) {
+                push_back(value);
+            }
+            else {
+                Node* prevNode = getNodeAt(index - 1);
+                Node* newNode = new Node(value, prevNode, prevNode->next);
+                prevNode->next->prev = newNode;
+                prevNode->next = newNode;
+            }
+            size++;
+        }
+
+        void remove(size_t index) {
+            if (index >= size) {
+                std::cerr << "Index out of bounds" << std::endl;
+                return;
+            }
+            Node* toDelete = getNodeAt(index);
+            if (toDelete->prev) {
+                toDelete->prev->next = toDelete->next;
+            }
+            if (toDelete->next) {
+                toDelete->next->prev = toDelete->prev;
+            }
+            if (toDelete == head) {
+                head = toDelete->next;
+            }
+            if (toDelete == tail) {
+                tail = toDelete->prev;
+            }
+            delete toDelete;
+            size--;
+        }
+
+        T& operator[](size_t index) {
+            Node* current = getNodeAt(index);
+            return current->value;
+        }
+
+        size_t getSize() const {
+            return size;
+        }
+
+    };
+}
+
+
+int main() {
+    setlocale(0, "ru");
+    containers::DList<int> list;
+    int choice;
+    int value;
+    size_t index;
+
+
+    do {
+        std::cout << "\nМеню:\n";
+        std::cout << "1. Добавить в конец\n";
+        std::cout << "2. Вставить\n";
+        std::cout << "3. Удалить\n";
+        std::cout << "4. Доступ к элементу\n";
+        std::cout << "5. Выход\n";
+        std::cout << "Выберите действие: ";
+        std::cin >> choice;
+        switch (choice) {
+        case 1:
+            std::cout << "Введите значение для добавления в конец: ";
+            std::cin >> value;
+            list.push_back(value);
+            break;
+        case 2:
+            std::cout << "Введите индекс и значение для вставки: ";
+            std::cin >> index >> value;
+            list.insert(index, value);
+            break;
+        case 3:
+            std::cout << "Введите индекс для удаления: ";
+            std::cin >> index;
+            list.remove(index);
+            break;
+        case 4:
+            std::cout << "Введите индекс для доступа: ";
+            std::cin >> index;
+            if (index < list.getSize()) {
+                std::cout << "Значение на индексе " << index << ": " << list[index] << std::endl;
+            }
+            else {
+                std::cout << "Индекс вне диапазона." << std::endl;
+            }
+            break;
+        case 5:
+            break;
+        default:
+            std::cout << "Неверный выбор. Попробуйте снова." << std::endl;
+        }
+    } while (choice != 5);
+    return 0;
+}
