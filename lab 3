@@ -1,0 +1,108 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+template<typename T>
+class ScPtr {
+private:
+    T* ptr;
+
+public:
+    // Конструктор
+    explicit ScPtr(T* p = nullptr) : ptr(p) {}
+
+    // Деструктор
+    ~ScPtr() {
+        delete ptr;
+    }
+
+    // Запрет копирования
+    ScPtr(const ScPtr&) = delete;
+    ScPtr& operator=(const ScPtr&) = delete;
+
+    // Метод для обнуления указателя
+    void reset(T* p = nullptr) {
+        delete ptr;
+        ptr = p;
+    }
+
+    // Метод для обмена адресами
+    void swap(ScPtr& other) {
+        std::swap(ptr, other.ptr);
+    }
+
+    // Получение "сырого" указателя
+    T* get() const {
+        return ptr;
+    }
+
+    // Операторы доступа
+    T& operator*() const {
+        return *ptr;
+    }
+
+    T* operator->() const {
+        return ptr;
+    }
+};
+
+
+int main() {
+    setlocale(0, "ru");
+    ScPtr<int> intPtr;
+    ScPtr<double> doublePtr;
+    ScPtr<std::string> stringPtr;
+
+    int choice;
+    do {
+        std::cout << "1. Создать ScPtr для int" << std::endl;
+        std::cout << "2. Создать ScPtr для double" << std::endl;
+        std::cout << "3. Создать ScPtr для string" << std::endl;
+        std::cout << "4. Сбросить ScPtr" << std::endl;
+        std::cout << "5. Обменять ScPtr" << std::endl;
+        std::cout << "6. Вывести значение ScPtr" << std::endl;
+        std::cout << "7. Выход" << std::endl;
+        std::cout << "Выберите действие: ";
+        std::cin >> choice;
+
+        switch (choice) {
+        case 1:
+            intPtr.reset(new int(10));
+            std::cout << "ScPtr для int создан со значением: " << *intPtr << std::endl;
+            break;
+        case 2:
+            doublePtr.reset(new double(3.14));
+            std::cout << "ScPtr для double создан со значением: " << *doublePtr << std::endl;
+            break;
+        case 3:
+            stringPtr.reset(new std::string("Hello, World!"));
+            std::cout << "ScPtr для string создан со значением: " << *stringPtr << std::endl;
+            break;
+        case 4:
+            intPtr.reset();
+            doublePtr.reset();
+            stringPtr.reset();
+            std::cout << "ScPtr сброшены" << std::endl;
+            break;
+        case 5:
+        {
+            ScPtr<int> temp(new int(20));
+            intPtr.swap(temp);
+            std::cout << "ScPtr для int обменян со значением: " << *intPtr << std::endl;
+        }
+        break;
+        case 6:
+            if (intPtr.get()) std::cout << "Значение intPtr: " << *intPtr << std::endl;
+            if (doublePtr.get()) std::cout << "Значение doublePtr: " << *doublePtr << std::endl;
+            if (stringPtr.get()) std::cout << "Значение stringPtr: " << *stringPtr << std::endl;
+            break;
+        case 7:
+            std::cout << "Выход из программы." << std::endl;
+            break;
+        default:
+            std::cout << "Неверный выбор. Пожалуйста, попробуйте еще раз." << std::endl;
+        }
+    } while (choice != 7);
+
+    return 0;
+}
