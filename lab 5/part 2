@@ -1,0 +1,62 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+// Функция для генерации файла со случайными числами
+void generateNumbers(const std::string& filename) {
+    std::ofstream file(filename);
+    std::srand(std::time(nullptr)); // инициализация генератора случайных чисел
+
+    for (int i = 0; i < 100; ++i) {
+        file << (std::rand() % 101 - 50) << std::endl; // генерация чисел от -50 до +50
+    }
+
+    file.close();
+    std::cout << "Файл со случайными числами записан: " << filename << std::endl;
+}
+
+// Функция для преобразования чисел файла
+void transformNumbers(const std::string& inputFile, const std::string& outputFile) {
+    std::ifstream inFile(inputFile);
+    std::ofstream outFile(outputFile);
+    std::vector<int> numbers;
+    int number;
+
+    // Считывание чисел из файла
+    while (inFile >> number) {
+        numbers.push_back(number);
+    }
+
+    // Поиск максимального числа
+    int maxNumber = numbers[0];
+    for (int i = 1; i < numbers.size(); ++i) {
+        if (numbers[i] > maxNumber) {
+            maxNumber = numbers[i];
+        }
+    }
+
+    std::cout << "Преобразование чисел: " << std::endl;
+    // Преобразование и запись чисел в новый файл
+    for (int num : numbers) {
+        outFile << num - maxNumber << std::endl;
+        std::cout << num - maxNumber << "   ";
+    }
+
+    inFile.close();
+    outFile.close();
+
+    std::cout << std::endl << "Файл с преобразованными числами записан: " << outputFile << std::endl;
+}
+
+int main() {
+    setlocale(0, "ru");
+    const std::string inputFile = "random_numbers.txt";
+    const std::string outputFile = "transformed_numbers.txt";
+
+    generateNumbers(inputFile);
+    transformNumbers(inputFile, outputFile);
+
+    return 0;
+}
