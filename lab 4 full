@@ -1,0 +1,201 @@
+/////////////////
+Stackexeption.h
+
+#include <exception>
+#include <string>
+
+class StackException : public std::exception {
+private:
+    std::string message;
+
+public:
+    explicit StackException(const std::string& msg) : message(msg) {}
+
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
+};
+
+///////////////////
+
+///////////////////
+Stack.h
+
+#include <iostream>
+#include <string>
+#include <initializer_list>
+#include "StackException.h"
+
+template <typename T>
+class Stack {
+public:
+    Stack() : size(0), capacity(10), data(new T[10]) {}
+    Stack(std::initializer_list<T> init);
+    Stack(const Stack& other);
+    Stack(Stack&& other) noexcept;
+
+    Stack& operator=(const Stack& other);
+    Stack& operator=(Stack&& other) noexcept;
+
+    ~Stack() { delete[] data; }
+
+    void push(const T& value);
+    T pop();
+    T& top() const;
+    bool isEmpty() const;
+    size_t getSize() const;
+
+private:
+    T* data;
+    size_t size;
+    size_t capacity;
+
+    void resize(size_t newCapacity);
+};
+
+template <typename T>
+Stack<T>::Stack(std::initializer_list<T> init) : size(0), capacity(init.size()), data(new T[init.size()]) {
+    for (auto& value : init) {
+        push(value);
+    }
+}
+
+template <typename T>
+Stack<T>::Stack(const Stack<T>& other) : size(other.size), capacity(other.capacity), data(new T[other.capacity]) {
+    std::copy(other.data, other.data + other.size, data);
+}
+
+template <typename T>
+Stack<T>::Stack(Stack<T>&& other) noexcept : size(other.size), capacity(other.capacity), data(other.data) {
+    other.data = nullptr;
+    other.size = 0;
+    other.capacity = 0;
+}
+
+template <typename T>
+Stack<T>& Stack<T>::operator=(const Stack<T>& other) {
+    if (this != &other) {
+        T* newData = new T[other.capacity];
+        std::copy(other.data, other.data + other.size, newData);
+        delete[] data;
+        data = newData;
+        size = other.size;
+        capacity = other.capacity;
+    }
+    return *this;
+}
+
+template <typename T>
+Stack<T>& Stack<T>::operator=(Stack<T>&& other) noexcept {
+    if (this != &other) {
+        delete[] data;
+        data = other.data;
+        size = other.size;
+        capacity = other.capacity;
+        other.data = nullptr;
+        other.size = 0;
+        other.capacity = 0;
+    }
+    return *this;
+}
+
+template <typename T>
+void Stack<T>::push(const T& value) {
+    if (size == capacity) {
+        resize(capacity * 2);
+    }
+    data[size++] = value;
+}
+
+template <typename T>
+T Stack<T>::pop() {
+    if (isEmpty()) {
+        throw StackException("Stack Underflow");
+    }
+    return data[--size];
+}
+
+template <typename T>
+T& Stack<T>::top() const {
+    if (isEmpty()) {
+        throw StackException("Stack is empty");
+    }
+    return data[size - 1];
+}
+
+template <typename T>
+bool Stack<T>::isEmpty() const {
+    return size == 0;
+}
+
+template <typename T>
+size_t Stack<T>::getSize() const {
+    return size;
+}
+
+template <typename T>
+void Stack<T>::resize(size_t newCapacity) {
+    T* newData = new T[newCapacity];
+    for (size_t i = 0; i < size; ++i) {
+        newData[i] = data[i];
+    }
+    delete[] data;
+    data = newData;
+    capacity = newCapacity;
+}
+
+//////////////////////
+
+
+/////////////////////
+main
+
+#include "Stack.h"
+
+int main() {
+    setlocale(0, "ru");
+    Stack<int> intStack;
+    int choice, value;
+
+    while (true) {
+        std::cout << "\n*** Меню Стека ***\n";
+        std::cout << "1. Добавить элемент\n";
+        std::cout << "2. Удалить элемент\n";
+        std::cout << "3. Показать верхний элемент\n";
+        std::cout << "4. Размер стека\n";
+        std::cout << "5. Выход\n";
+        std::cout << "Выберите действие: ";
+        std::cin >> choice;
+
+        switch (choice) {
+        case 1:
+            std::cout << "Введите значение для добавления: ";
+            std::cin >> value;
+            intStack.push(value);
+            break;
+        case 2:
+            try {
+                std::cout << "Удаленный элемент: " << intStack.pop() << std::endl;
+            }
+            catch (const StackException& e) {
+                std::cerr << e.what() << std::endl;
+            }
+            break;
+        case 3:
+            try {
+                std::cout << "Верхний элемент: " << intStack.top() << std::endl;
+            }
+            catch (const StackException& e) {
+                std::cerr << e.what() << std::endl;
+            }
+            break;
+        case 4:
+            std::cout << "Размер стека: " << intStack.getSize() << std::endl;
+            break;
+        case 5:
+            return 0;
+        default:
+            std::cout << "Неверный выбор. Пожалуйста, попробуйте снова.\n";
+        }
+    }
+}
