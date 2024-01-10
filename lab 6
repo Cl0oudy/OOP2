@@ -1,0 +1,255 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <Windows.h>
+
+class Student {
+public:
+    int id;
+    std::string name;
+    std::vector<int> courses;
+
+    Student(int id, std::string name) : id(id), name(name) {}
+
+    void addCourse(int courseId) {
+        courses.push_back(courseId);
+    }
+};
+
+class Teacher {
+public:
+    int id;
+    int experience;
+    std::string name;
+    std::vector<int> courses;
+
+    Teacher(int id, std::string name, int experience) : id(id), name(name), experience(experience) {}
+
+    void addCourse(int courseId) {
+        courses.push_back(courseId);
+    }
+};
+
+class Course {
+public:
+    int id;
+    std::string name;
+    int teacherId;
+    std::vector<int> studentIds;
+
+    Course(int id, std::string name, int teacherId) : id(id), name(name), teacherId(teacherId) {}
+
+    void addStudent(int studentId) {
+        studentIds.push_back(studentId);
+    }
+};
+
+class EducationSystem {
+    std::vector<Student> students;
+    std::vector<Teacher> teachers;
+    std::vector<Course> courses;
+
+public:
+    void addStudent() {
+        int id;
+        std::string name;
+        std::cout << "Введите ID студента: ";
+        std::cin >> id;
+        std::cin.ignore();
+        std::cout << "Введите имя студента: ";
+        std::getline(std::cin, name);
+        students.push_back(Student(id, name));
+        std::cout << "Студент добавлен.\n";
+    }
+
+    void deleteStudent() {
+        int id;
+        std::cout << "Введите ID студента для удаления: ";
+        std::cin >> id;
+        students.erase(std::remove_if(students.begin(), students.end(), [id](const Student& s) { return s.id == id; }), students.end());
+        std::cout << "Студент удален.\n";
+    }
+
+    void addTeacher() {
+        int id, experience;
+        std::string name;
+        std::cout << "Введите ID преподавателя: ";
+        std::cin >> id;
+        std::cin.ignore();
+        std::cout << "Введите имя преподавателя: ";
+        std::getline(std::cin, name);
+        std::cout << "Введите стаж преподавателя (в годах): ";
+        std::cin >> experience;
+        teachers.push_back(Teacher(id, name, experience));
+        std::cout << "Преподаватель добавлен.\n";
+    }
+
+    void deleteTeacher() {
+        int id;
+        std::cout << "Введите ID преподавателя для удаления: ";
+        std::cin >> id;
+        teachers.erase(std::remove_if(teachers.begin(), teachers.end(), [id](const Teacher& t) { return t.id == id; }), teachers.end());
+        std::cout << "Преподаватель удален.\n";
+    }
+
+    void addCourse() {
+        int id, teacherId;
+        std::string name;
+        std::cout << "Введите ID курса: ";
+        std::cin >> id;
+        std::cin.ignore();
+        std::cout << "Введите название курса: ";
+        std::getline(std::cin, name);
+        std::cout << "Введите ID преподавателя курса: ";
+        std::cin >> teacherId;
+        courses.push_back(Course(id, name, teacherId));
+        std::cout << "Курс добавлен.\n";
+    }
+
+    void deleteCourse() {
+        int id;
+        std::cout << "Введите ID курса для удаления: ";
+        std::cin >> id;
+        courses.erase(std::remove_if(courses.begin(), courses.end(), [id](const Course& c) { return c.id == id; }), courses.end());
+        std::cout << "Курс удален.\n";
+    }
+
+    void saveToTSV(const std::string& filename) {
+        std::ofstream file(filename);
+        for (const auto& student : students) {
+            file << "student\t" << student.id << "\t" << student.name << "\t";
+            for (auto courseId : student.courses) file << courseId << " ";
+            file << std::endl;
+        }
+        for (const auto& teacher : teachers) {
+            file << "teacher\t" << teacher.id << "\t" << teacher.name << "\t" << teacher.experience << "\t";
+            for (auto courseId : teacher.courses) file << courseId << " ";
+            file << std::endl;
+        }
+        for (const auto& course : courses) {
+            file << "course\t" << course.id << "\t" << course.name << "\t" << course.teacherId << "\t";
+            for (auto studentId : course.studentIds) file << studentId << " ";
+            file << std::endl;
+        }
+        file.close();
+    }
+
+    void loadFromTSV(const std::string& filename) {
+        std::ifstream file(filename);
+        std::string line, type;
+        while (getline(file, line)) {
+            std::istringstream iss(line);
+            iss >> type;
+            if (type == "student") {
+                int id;
+                std::string name;
+                iss >> id >> name;
+                Student student(id, name);
+                int courseId;
+                while (iss >> courseId) {
+                    student.addCourse(courseId);
+                }
+                students.push_back(student);
+            }
+            else if (type == "teacher") {
+                int id, experience;
+                std::string name;
+                iss >> id >> name >> experience;
+                Teacher teacher(id, name, experience);
+                int courseId;
+                while (iss >> courseId) {
+                    teacher.addCourse(courseId);
+                }
+                teachers.push_back(teacher);
+            }
+            else if (type == "course") {
+                int id, teacherId;
+                std::string name;
+                iss >> id >> name >> teacherId;
+                Course course(id, name, teacherId);
+                int studentId;
+                while (iss >> studentId) {
+                    course.addStudent(studentId);
+                }
+                courses.push_back(course);
+            }
+        }
+        file.close();
+    }
+
+    void displayAllData() {
+        std::cout << "Студенты:\n";
+        for (const auto& student : students) {
+            std::cout << "ID: " << student.id << ", Имя: " << student.name << ", Курсы: ";
+            for (auto courseId : student.courses) std::cout << courseId << " ";
+            std::cout << std::endl;
+        }
+
+        std::cout << "\nПреподаватели:\n";
+        for (const auto& teacher : teachers) {
+            std::cout << "ID: " << teacher.id << ", Имя: " << teacher.name << ", Стаж: " << teacher.experience << ", Курсы: ";
+            for (auto courseId : teacher.courses) std::cout << courseId << " ";
+            std::cout << std::endl;
+        }
+
+        std::cout << "\nКурсы:\n";
+        for (const auto& course : courses) {
+            std::cout << "ID: " << course.id << ", Название: " << course.name << ", Преподаватель ID: " << course.teacherId << ", Студенты: ";
+            for (auto studentId : course.studentIds) std::cout << studentId << " ";
+            std::cout << std::endl;
+        }
+    }
+};
+
+int main() {
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    setlocale(0, "ru");
+    EducationSystem system;
+
+    int choice = 0;
+    while (true) {
+        std::cout << "1. Загрузить данные\n2. Сохранить данные\n3. Добавить студента\n4. Удалить студента\n5. Добавить преподавателя\n6. Удалить преподавателя\n7. Добавить курс\n8. Удалить курс\n9. Показать все данные\n10. Выйти\nВведите ваш выбор: ";
+        std::cin >> choice;
+        switch (choice) {
+        case 1:
+            system.loadFromTSV("data.tsv");
+            std::cout << "Данные успешно загружены.\n";
+            break;
+        case 2:
+            system.saveToTSV("data.tsv");
+            std::cout << "Данные успешно сохранены.\n";
+            break;
+        case 3:
+            system.addStudent();
+            break;
+        case 4:
+            system.deleteStudent();
+            break;
+        case 5:
+            system.addTeacher();
+            break;
+        case 6:
+            system.deleteTeacher();
+            break;
+        case 7:
+            system.addCourse();
+            break;
+        case 8:
+            system.deleteCourse();
+            break;
+        case 9:
+            system.displayAllData();
+            break;
+        case 10:
+            return 0;
+        default:
+            std::cout << "Неверный выбор. Пожалуйста, попробуйте снова.\n";
+        }
+    }
+
+    return 0;
+}
